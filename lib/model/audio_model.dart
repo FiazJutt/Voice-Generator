@@ -1,9 +1,16 @@
 class AudioModel {
   final int? id;
   final String text;
-  final String voice;
+  final String voice; // This is the model ID (e.g., 'aura-asteria-en')
   final String filePath;
   final DateTime createdAt;
+  
+  // Voice metadata
+  final String? displayName;
+  final String? language;
+  final String? region;
+  final String? gender;
+  final List<String>? properties;
 
   AudioModel({
     this.id,
@@ -11,6 +18,11 @@ class AudioModel {
     required this.voice,
     required this.filePath,
     required this.createdAt,
+    this.displayName,
+    this.language,
+    this.region,
+    this.gender,
+    this.properties,
   });
 
   Map<String, dynamic> toMap() {
@@ -20,6 +32,11 @@ class AudioModel {
       'voice': voice,
       'filePath': filePath,
       'createdAt': createdAt.toIso8601String(),
+      'displayName': displayName,
+      'language': language,
+      'region': region,
+      'gender': gender,
+      'properties': properties?.join(','), // Store as comma-separated string
     };
   }
 
@@ -30,6 +47,13 @@ class AudioModel {
       voice: map['voice'],
       filePath: map['filePath'],
       createdAt: DateTime.parse(map['createdAt']),
+      displayName: map['displayName'],
+      language: map['language'],
+      region: map['region'],
+      gender: map['gender'],
+      properties: map['properties'] != null 
+          ? (map['properties'] as String).split(',')
+          : null,
     );
   }
 }

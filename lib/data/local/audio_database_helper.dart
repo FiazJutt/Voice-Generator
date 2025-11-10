@@ -31,7 +31,12 @@ class AudioDatabaseHelper {
             text TEXT NOT NULL,
             voice TEXT NOT NULL,
             filePath TEXT NOT NULL,
-            createdAt TEXT NOT NULL
+            createdAt TEXT NOT NULL,
+            displayName TEXT,
+            language TEXT,
+            region TEXT,
+            gender TEXT,
+            properties TEXT
           )
         ''');
         });
