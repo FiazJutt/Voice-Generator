@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'package:voicegenerator/core/app_colors.dart';
-import 'package:voicegenerator/core/app_theme.dart';
+import 'package:voicegenerator/core/theme/app_theme.dart';
 import 'package:voicegenerator/view/home_screen.dart';
 import 'package:voicegenerator/viewmodel/audio_provider.dart';
 
