@@ -7,11 +7,13 @@ class AudioPlayerProvider extends ChangeNotifier {
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
   bool _isLoading = true;
+  String? _currentUrl;
 
   bool get isPlaying => _isPlaying;
   Duration get duration => _duration;
   Duration get position => _position;
   bool get isLoading => _isLoading;
+  String? get currentUrl => _currentUrl;
 
   AudioPlayerProvider() {
     _audioPlayer = AudioPlayer();
@@ -33,6 +35,11 @@ class AudioPlayerProvider extends ChangeNotifier {
       _isPlaying = state == PlayerState.playing;
       notifyListeners();
     });
+    _audioPlayer.onPlayerComplete.listen((_) {
+      _isPlaying = false;
+      _position = _duration;
+      notifyListeners();
+    });
   }
 
   Future<void> initAudio(String audioUrl) async {
@@ -41,6 +48,7 @@ class AudioPlayerProvider extends ChangeNotifier {
 
     // Preload metadata (so duration appears without auto-playing)
     await _audioPlayer.setSource(DeviceFileSource(audioUrl));
+    _currentUrl = audioUrl;
 
     // Small delay ensures the metadata is fetched before rendering
     await Future.delayed(const Duration(milliseconds: 300));
@@ -50,6 +58,7 @@ class AudioPlayerProvider extends ChangeNotifier {
 
   Future<void> playAudio(String audioUrl) async {
     await _audioPlayer.play(DeviceFileSource(audioUrl));
+    _currentUrl = audioUrl;
   }
 
   Future<void> pauseAudio() async {
@@ -64,6 +73,7 @@ class AudioPlayerProvider extends ChangeNotifier {
   await _audioPlayer.stop();
   _isPlaying = false;
   _position = Duration.zero;
+  _currentUrl = null;
   notifyListeners();
 }
 

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:voicegenerator/core/theme/app_theme.dart';
-import 'package:voicegenerator/view/home_screen.dart';
+import 'package:voicegenerator/view/home/home_screen.dart';
+import 'package:voicegenerator/viewmodel/audio_player_provider.dart';
 import 'package:voicegenerator/viewmodel/audio_provider.dart';
 
 void main() async{
@@ -13,6 +14,7 @@ void main() async{
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AudioProvider()),
+        ChangeNotifierProvider(create: (_) => AudioPlayerProvider()),
       ],
       child: const MyApp(),
     ),
