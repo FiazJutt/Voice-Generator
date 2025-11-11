@@ -1,14 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:deepgram_speech_to_text/deepgram_speech_to_text.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path/path.dart' as path;
 import 'package:voicegenerator/core/deepgram_voices.dart';
-import '../core/deepgram_voices.dart';
 import '../data/local/audio_database_helper.dart';
 import '../model/audio_model.dart';
 
@@ -24,7 +23,6 @@ class AudioProvider extends ChangeNotifier {
   String? get selectedLanguage => _selectedLanguage;
 
   final _dbHelper = AudioDatabaseHelper.instance;
-  Deepgram? _deepgram;
   String? _apiKey;
   String? _successMessage;
 
@@ -147,11 +145,23 @@ class AudioProvider extends ChangeNotifier {
       // Get voice metadata
       final voiceMetadata = getVoiceMetadata(voiceId);
       
+      // Create default title for the audio. Use a short excerpt of the text if available, else timestamp.
+      String defaultTitle;
+      // final trimmedText = text.trim();
+      // if (trimmedText.isNotEmpty) {
+        // final excerpt = trimmedText.length > 20 ? '${trimmedText.substring(0, 20)}...' : trimmedText;
+        // defaultTitle = excerpt;
+      // } else {
+        defaultTitle = 'Audio_$timestamp';
+        debugPrint('Default title set to $defaultTitle');
+      // }
+
       final audio = AudioModel(
         text: text,
         voice: voiceId,
         filePath: filePath,
         createdAt: DateTime.now(),
+        title: defaultTitle,
         displayName: voiceMetadata?['displayName'],
         language: voiceMetadata?['language'],
         region: voiceMetadata?['region'],
@@ -177,7 +187,8 @@ class AudioProvider extends ChangeNotifier {
   }
 
   /// Save audio to device
-  Future<void> saveAudioToDevice(AudioModel audio) async {
+
+  Future<void> saveAudioToDevice(AudioModel audio, {String? targetDirPath}) async {
     final sourceFile = File(audio.filePath);
     if (!await sourceFile.exists()) {
       _setError('Audio file not found. Please regenerate.');
@@ -204,19 +215,59 @@ class AudioProvider extends ChangeNotifier {
         }
       }
 
-      final voiceName = audio.voice
-          .replaceAll('aura-', '')
-          .replaceAll('-en', '')
-          .replaceAll('-es', '');
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = '${voiceName}_voice_$timestamp.mp3';
-      final newPath = path.join(downloadsDir!.path, fileName);
+      // Use the audio title (if present) as the file name when saving.
+      final safeTitle = (audio.title ?? 'audio')
+          .replaceAll(RegExp(r'[^A-Za-z0-9 _-]'), '')
+          .replaceAll(' ', '_');
+      final fileName = '${safeTitle}.mp3';
 
+      // If a target directory path was provided (user picked), copy the file there.
+      if (targetDirPath != null && targetDirPath.isNotEmpty) {
+        final targetDir = Directory(targetDirPath);
+        if (!await targetDir.exists()) {
+          try {
+            await targetDir.create(recursive: true);
+          } catch (e) {
+            // ignore and fall back
+          }
+        }
+
+        final newPath = path.join(targetDir.path, fileName);
+        final newFile = await sourceFile.copy(newPath);
+
+        if (await newFile.exists()) {
+          final isInDownloads = newPath.toLowerCase().contains('download');
+          final locationName = isInDownloads ? 'Downloads' : 'App Storage';
+          _setSuccess('Audio saved to $locationName folder!\nFile: $fileName');
+          return;
+        }
+      }
+
+      // No explicit target dir: try FileSaver first so platform handles the save.
+      try {
+        final bytes = await sourceFile.readAsBytes();
+        // FileSaver expects named parameters: name (without extension), bytes,
+        // fileExtension, and mimeType.
+        await FileSaver.instance.saveAs(
+          name: safeTitle,
+          bytes: bytes,
+          fileExtension: 'mp3',
+          mimeType: MimeType.mp3,
+        );
+        _setSuccess('Audio saved to device Downloads');
+        return;
+      } catch (e) {
+        debugPrint('FileSaver save failed: $e');
+        // Fall through to copying into a local folder.
+      }
+
+      // Fallback: save into detected Downloads or application documents
+      final targetDir = downloadsDir ?? await getApplicationDocumentsDirectory();
+      final newPath = path.join(targetDir.path, fileName);
       final newFile = await sourceFile.copy(newPath);
 
       if (await newFile.exists()) {
-        final isInDownloads =
-            newPath.contains('Download') || newPath.contains('download');
+        final isInDownloads = newPath.toLowerCase().contains('download');
         final locationName = isInDownloads ? 'Downloads' : 'App Storage';
         _setSuccess('Audio saved to $locationName folder!\nFile: $fileName');
       } else {
@@ -229,6 +280,7 @@ class AudioProvider extends ChangeNotifier {
     }
   }
 
+
   /// Share audio file
   Future<void> shareAudio(AudioModel audio) async {
     final file = File(audio.filePath);
@@ -239,10 +291,11 @@ class AudioProvider extends ChangeNotifier {
 
     try {
       final xFile = XFile(audio.filePath, mimeType: 'audio/mpeg');
+      final title = audio.title ?? audio.text;
       final result = await Share.shareXFiles(
         [xFile],
         text: 'Generated audio: ${audio.text}',
-        subject: 'Voice: ${audio.voice}',
+        subject: title,
       );
 
       if (result.status == ShareResultStatus.success) {
@@ -269,6 +322,33 @@ class AudioProvider extends ChangeNotifier {
       _setSuccess('Audio deleted successfully');
     } catch (e) {
       _setError('Error deleting audio: $e');
+    }
+  }
+
+  /// Rename audio (update the title in database)
+  Future<void> renameAudio(AudioModel audio, String newTitle) async {
+    if (newTitle.trim().isEmpty) {
+      _setError('Name cannot be empty');
+      return;
+    }
+
+    try {
+      _setLoading(true);
+
+      if (audio.id != null) {
+        final rows = await _dbHelper.updateTitle(audio.id!, newTitle.trim());
+        if (rows == 0) {
+          throw Exception('Failed to update database');
+        }
+      }
+
+      // Refresh local list from DB
+      await fetchSavedAudios();
+      _setSuccess('Audio renamed successfully');
+    } catch (e) {
+      _setError('Error renaming audio: $e');
+    } finally {
+      _setLoading(false);
     }
   }
 

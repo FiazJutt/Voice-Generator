@@ -1,6 +1,5 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 import '../../model/audio_model.dart';
 
 class AudioDatabaseHelper {
@@ -23,15 +22,18 @@ class AudioDatabaseHelper {
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, _databaseName);
-    return await openDatabase(path, version: _databaseVersion,
-        onCreate: (db, version) async {
-          await db.execute('''
+    return await openDatabase(
+      path,
+      version: _databaseVersion,
+      onCreate: (db, version) async {
+        await db.execute('''
           CREATE TABLE $table(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             text TEXT NOT NULL,
             voice TEXT NOT NULL,
             filePath TEXT NOT NULL,
             createdAt TEXT NOT NULL,
+            title TEXT,
             displayName TEXT,
             language TEXT,
             region TEXT,
@@ -53,11 +55,22 @@ class AudioDatabaseHelper {
     return res.map((e) => AudioModel.fromMap(e)).toList();
   }
 
-  // In AudioDatabaseHelper class
+  // Delete audio by ID
   Future<int> deleteAudio(int id) async {
     final db = await database;
     return await db.delete(
-      'audios',
+      table,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // Update title for an audio entry
+  Future<int> updateTitle(int id, String title) async {
+    final db = await database;
+    return await db.update(
+      table,
+      {'title': title},
       where: 'id = ?',
       whereArgs: [id],
     );

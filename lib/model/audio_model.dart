@@ -4,6 +4,7 @@ class AudioModel {
   final String voice; // This is the model ID (e.g., 'aura-asteria-en')
   final String filePath;
   final DateTime createdAt;
+  final String? title; // user-visible mutable name for the audio (used for download/share/rename)
   
   // Voice metadata
   final String? displayName;
@@ -19,6 +20,7 @@ class AudioModel {
     required this.filePath,
     required this.createdAt,
     this.displayName,
+    this.title,
     this.language,
     this.region,
     this.gender,
@@ -32,6 +34,7 @@ class AudioModel {
       'voice': voice,
       'filePath': filePath,
       'createdAt': createdAt.toIso8601String(),
+      'title': title,
       'displayName': displayName,
       'language': language,
       'region': region,
@@ -48,6 +51,7 @@ class AudioModel {
       filePath: map['filePath'],
       createdAt: DateTime.parse(map['createdAt']),
       displayName: map['displayName'],
+      title: map['title'],
       language: map['language'],
       region: map['region'],
       gender: map['gender'],

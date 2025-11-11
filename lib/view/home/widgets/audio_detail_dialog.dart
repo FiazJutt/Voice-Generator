@@ -7,10 +7,7 @@ import '../../../viewmodel/audio_provider.dart';
 class AudioDetailsDialog extends StatelessWidget {
   final AudioModel audio;
 
-  const AudioDetailsDialog({
-    super.key,
-    required this.audio,
-  });
+  const AudioDetailsDialog({super.key, required this.audio});
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} at ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
@@ -36,24 +33,33 @@ class AudioDetailsDialog extends StatelessWidget {
           fontWeight: FontWeight.bold,
         ),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _DetailRow(label: 'Text', value: audio.text),
-          const SizedBox(height: 12),
-          _DetailRow(label: 'Voice', value: voiceInfo),
-          if (audio.gender != null) ...[
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (audio.title != null) ...[
+              _DetailRow(label: 'Name', value: audio.title!),
+              const SizedBox(height: 12),
+            ],
+            _DetailRow(label: 'Text', value: audio.text),
             const SizedBox(height: 12),
-            _DetailRow(label: 'Gender', value: audio.gender!),
-          ],
-          if (audio.properties != null && audio.properties!.isNotEmpty) ...[
+            _DetailRow(label: 'Voice', value: voiceInfo),
+            if (audio.gender != null) ...[
+              const SizedBox(height: 12),
+              _DetailRow(label: 'Gender', value: audio.gender!),
+            ],
+            if (audio.properties != null && audio.properties!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _DetailRow(
+                label: 'Properties',
+                value: audio.properties!.join(', '),
+              ),
+            ],
             const SizedBox(height: 12),
-            _DetailRow(label: 'Properties', value: audio.properties!.join(', ')),
+            _DetailRow(label: 'Created', value: _formatDate(audio.createdAt)),
           ],
-          const SizedBox(height: 12),
-          _DetailRow(label: 'Created', value: _formatDate(audio.createdAt)),
-        ],
+        ),
       ),
       actions: [
         TextButton(
@@ -69,10 +75,7 @@ class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _DetailRow({
-    required this.label,
-    required this.value,
-  });
+  const _DetailRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {

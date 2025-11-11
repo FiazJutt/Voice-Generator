@@ -87,15 +87,13 @@ class AudioListItem extends StatelessWidget {
 
   Widget _buildTitle() {
     return Text(
-      audio.text.length > 50
-          ? '${audio.text.substring(0, 50)}...'
-          : audio.text,
+      '${audio.title}',
       style: const TextStyle(
         color: AppColors.textPrimary,
         fontSize: 15,
         fontWeight: FontWeight.w600,
       ),
-      maxLines: 2,
+      maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
   }
@@ -105,10 +103,7 @@ class AudioListItem extends StatelessWidget {
       padding: const EdgeInsets.only(top: 4),
       child: Text(
         '$displayName • ${_formatDate(audio.createdAt)}',
-        style: const TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 12,
-        ),
+        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
       ),
     );
   }

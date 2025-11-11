@@ -7,6 +7,8 @@ class AudioOptionsBottomSheet extends StatelessWidget {
   final VoidCallback onShare;
   final VoidCallback onSave;
   final VoidCallback onDetails;
+  final VoidCallback onRename;
+  final VoidCallback onDelete;
 
   const AudioOptionsBottomSheet({
     super.key,
@@ -14,6 +16,8 @@ class AudioOptionsBottomSheet extends StatelessWidget {
     required this.onShare,
     required this.onSave,
     required this.onDetails,
+    required this.onRename,
+    required this.onDelete,
   });
 
   @override
@@ -26,14 +30,24 @@ class AudioOptionsBottomSheet extends StatelessWidget {
           _buildHandle(),
           const SizedBox(height: 20),
           _OptionTile(
-            icon: Icons.share_rounded,
-            title: 'Share',
-            onTap: onShare,
-          ),
-          _OptionTile(
             icon: Icons.download_rounded,
             title: 'Save to Device',
             onTap: onSave,
+          ),
+          _OptionTile(
+            icon: Icons.drive_file_rename_outline_rounded,
+            title: 'Rename',
+            onTap: onRename,
+          ),
+          _OptionTile(
+            icon: Icons.delete_outline_rounded,
+            title: 'Delete',
+            onTap: onDelete,
+          ),
+          _OptionTile(
+            icon: Icons.share_rounded,
+            title: 'Share',
+            onTap: onShare,
           ),
           _OptionTile(
             icon: Icons.info_outline_rounded,
